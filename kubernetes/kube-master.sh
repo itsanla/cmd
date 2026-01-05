@@ -1,10 +1,15 @@
 #!/bin/bash
 
 # ==========================================
+# 0. INSTALL DEPENDENCIES YANG DIPERLUKAN
+# ==========================================
+echo "Menginstall dependencies..."
+sudo apt-get update
+sudo apt-get install -y conntrack socat
+
+# ==========================================
 # 1. DETEKSI IP PRIVATE OTOMATIS
 # ==========================================
-# Mengambil IP Private dari interface jaringan (biasanya eth0)
-# Ini lebih aman daripada mengetik manual agar tidak salah input IP Public
 IP_MASTER=$(hostname -I | awk '{print $1}')
 
 echo "Mendeteksi IP Master: $IP_MASTER"
@@ -12,16 +17,25 @@ echo "Mendeteksi IP Master: $IP_MASTER"
 # ==========================================
 # 2. INISIALISASI KUBERNETES MASTER
 # ==========================================
-# --apiserver-advertise-address: Wajib IP Private agar worker bisa connect
-# --pod-network-cidr: 192.168.0.0/16 adalah default Calico
+echo "Menginisialisasi Kubernetes Master..."
 sudo kubeadm init --apiserver-advertise-address=$IP_MASTER --pod-network-cidr=192.168.0.0/16
+
+# Cek apakah kubeadm init berhasil
+if [ $? -ne 0 ]; then
+    echo "ERROR: kubeadm init gagal!"
+    exit 1
+fi
 
 # ==========================================
 # 3. SETUP KUBE CONFIG (Agar bisa pakai kubectl)
 # ==========================================
+echo "Setup kubeconfig..."
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Tambahkan environment variable
+export KUBECONFIG=$HOME/.kube/config
 
 # ==========================================
 # 4. INSTALL CALICO NETWORK
@@ -29,13 +43,14 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 echo "Menginstall Calico Network..."
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/tigera-operator.yaml
 
-# Download custom resources dulu untuk memastikan CIDR-nya cocok
+# Download custom resources
 curl https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/custom-resources.yaml -O
 
-# (Opsional) Jika Anda ingin mengubah CIDR, edit file custom-resources.yaml di sini
-# Tapi karena init anda pakai 192.168.0.0/16, default file ini sudah cocok.
-
 kubectl create -f custom-resources.yaml
+
+# Tunggu sampai Calico siap
+echo "Menunggu Calico siap..."
+sleep 10
 
 # ==========================================
 # 5. CETAK PERINTAH JOIN (PENTING!)
@@ -45,5 +60,8 @@ echo "=========================================================="
 echo "SETUP MASTER SELESAI!"
 echo "Simpan perintah di bawah ini untuk dijalankan di Worker:"
 echo "=========================================================="
-kubeadm token create --print-join-command
+sudo kubeadm token create --print-join-command
 echo "=========================================================="
+echo ""
+echo "Cek status pods:"
+kubectl get pods -A
