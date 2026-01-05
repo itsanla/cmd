@@ -1,15 +1,14 @@
-## Setup Izin Eksekusi
+## setup kubernetes cluster
 
 Salin dan jalankan perintah ini di terminal untuk mengaktifkan semua script:
 
 ```bash
-chmod +x kube-config.sh kube-master.sh kube-storage.sh
+curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/ssm.sh | bash
+curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/kube-config.sh | bash
 ```
 ```bash
-./kube-config.sh   # (Di semua node)
+curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/kube-master.sh | bash
 ```
 ```bash
-./kube-master.sh   # (Di Master saja)
+curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/kube-storage.sh | bash
 ```
-```bash
-./kube-storage.sh  # (Di Master, setelah worker ready)
