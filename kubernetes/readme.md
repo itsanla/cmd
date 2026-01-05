@@ -3,6 +3,7 @@
 Salin dan jalankan perintah ini di terminal untuk mengaktifkan semua script:
 
 ```bash
+#!/bin/bash
 curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/ssm.sh | bash
 curl -sL https://raw.githubusercontent.com/itsanla/cmd/refs/heads/main/kubernetes/kube-config.sh | bash
 ```
